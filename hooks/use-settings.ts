@@ -1,23 +1,35 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import {
-    saveApiKey,
-    getApiKey,
-    removeApiKey,
-    getMaskedKey,
-    validateKeyFormat,
-    type ApiKeyType
-} from "@/lib/utils/secure-storage"
 
 const SETTINGS_KEY = "agent_zero_settings"
 
+export type ChatModelId =
+    | "cf-jami-zai-org-glm-5-3-flash"
+    | "cf-jami-zai-org-glm-5-3"
+    | "cf-jami-moonshotai-kimi-k2-6"
+    | "cf-jami-qwen-qwen3-30b-a3b-fp8"
+    | "ne-gpt-oss-120b"
+    | "or-free"
+
+export type ImageModelId =
+    | "cf-img-flux-1-schnell"
+    | "cf-img-flux-2-dev"
+    | "cf-img-sdxl-lightning"
+    | "cf-img-dreamshaper-8-lcm"
+
+export type VideoModelId =
+    | "veo-2.0-generate-001"
+    | "veo-3.0-fast-generate-001"
+    | "veo-3.0-generate-001"
+    | "veo-3.1-fast-generate-preview"
+    | "veo-3.1-generate-preview"
+
 export interface AgentSettings {
-    apiKey: string
-    model: "gemini-3-flash-preview" | "gemini-3-pro-preview" | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-2.5-flash-lite"
-    imageModel: "gemini-2.5-flash-image" | "gemini-3-pro-image-preview" | "imagen-4.0-generate-001" | "imagen-4.0-ultra-generate-001" | "imagen-4.0-fast-generate-001"
+    model: ChatModelId
+    imageModel: ImageModelId
     imageAspectRatio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9"
-    videoModel: "veo-2.0-generate-001" | "veo-3.0-fast-generate-001" | "veo-3.0-generate-001" | "veo-3.1-fast-generate-preview" | "veo-3.1-generate-preview"
+    videoModel: VideoModelId
     videoAspectRatio: "16:9" | "9:16"
     videoResolution: "1080p" | "720p"
     videoDurationSeconds: 4 | 6 | 8
@@ -27,9 +39,8 @@ export interface AgentSettings {
 }
 
 const defaultSettings: AgentSettings = {
-    apiKey: "",
-    model: "gemini-3-flash-preview",
-    imageModel: "gemini-2.5-flash-image",
+    model: "cf-jami-zai-org-glm-5-3-flash",
+    imageModel: "cf-img-flux-1-schnell",
     imageAspectRatio: "9:16",
     videoModel: "veo-3.0-fast-generate-001",
     videoAspectRatio: "16:9",
@@ -49,11 +60,10 @@ export function useSettings() {
         if (typeof window === "undefined") return
 
         try {
-            // Load non-sensitive settings
             const stored = localStorage.getItem(SETTINGS_KEY)
             const parsed = stored ? JSON.parse(stored) : {}
 
-            const allowedVideoModels = new Set<AgentSettings["videoModel"]>([
+            const allowedVideoModels = new Set<VideoModelId>([
                 "veo-2.0-generate-001",
                 "veo-3.0-fast-generate-001",
                 "veo-3.0-generate-001",
@@ -70,13 +80,9 @@ export function useSettings() {
                 8
             ])
 
-            // Load API key from secure storage
-            const apiKey = getApiKey("google") || ""
-
             setSettingsState({
                 ...defaultSettings,
                 ...parsed,
-                apiKey,
                 videoModel: allowedVideoModels.has(parsed.videoModel)
                     ? parsed.videoModel
                     : defaultSettings.videoModel,
@@ -101,16 +107,7 @@ export function useSettings() {
         if (typeof window === "undefined") return
 
         try {
-            // Store API key separately with secure storage
-            if (newSettings.apiKey) {
-                saveApiKey("google", newSettings.apiKey)
-            } else {
-                removeApiKey("google")
-            }
-
-            // Store non-sensitive settings normally (without apiKey)
-            const { apiKey, ...safeSettings } = newSettings
-            localStorage.setItem(SETTINGS_KEY, JSON.stringify(safeSettings))
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings))
         } catch (error) {
             console.warn("Failed to save settings:", error)
         }
@@ -124,15 +121,11 @@ export function useSettings() {
         })
     }, [persist])
 
-    const setApiKey = useCallback((apiKey: string) => {
-        setSettings({ apiKey })
-    }, [setSettings])
-
-    const setModel = useCallback((model: AgentSettings["model"]) => {
+    const setModel = useCallback((model: ChatModelId) => {
         setSettings({ model })
     }, [setSettings])
 
-    const setImageModel = useCallback((imageModel: AgentSettings["imageModel"]) => {
+    const setImageModel = useCallback((imageModel: ImageModelId) => {
         setSettings({ imageModel })
     }, [setSettings])
 
@@ -140,7 +133,7 @@ export function useSettings() {
         setSettings({ imageAspectRatio })
     }, [setSettings])
 
-    const setVideoModel = useCallback((videoModel: AgentSettings["videoModel"]) => {
+    const setVideoModel = useCallback((videoModel: VideoModelId) => {
         setSettings({ videoModel })
     }, [setSettings])
 
@@ -168,28 +161,15 @@ export function useSettings() {
         setSettings({ schedulesEnabled })
     }, [setSettings])
 
-    const clearApiKey = useCallback(() => {
-        setSettings({ apiKey: "" })
-    }, [setSettings])
-
     const resetToDefaults = useCallback(() => {
         setSettingsState(defaultSettings)
         persist(defaultSettings)
     }, [persist])
 
-    // Get masked version of API key for display
-    const maskedApiKey = getMaskedKey("google")
-
-    // Validate API key format
-    const validateApiKey = useCallback((key: string) => {
-        return validateKeyFormat("google", key)
-    }, [])
-
     return {
         settings,
         loaded,
         setSettings,
-        setApiKey,
         setModel,
         setImageModel,
         setImageAspectRatio,
@@ -200,10 +180,6 @@ export function useSettings() {
         setVideoIncludeAudio,
         setTemperature,
         setSchedulesEnabled,
-        clearApiKey,
         resetToDefaults,
-        hasApiKey: Boolean(settings.apiKey),
-        maskedApiKey,
-        validateApiKey,
     }
 }

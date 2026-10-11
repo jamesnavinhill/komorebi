@@ -11,9 +11,6 @@ if (!process.env.BROWSERSLIST_IGNORE_OLD_DATA) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@xenova/transformers'],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     unoptimized: true,
   },

@@ -1,23 +1,15 @@
-import { GoogleGenAI, type Content, type GenerateContentConfig, type Tool } from "@google/genai"
+import {
+  chatCompletion,
+  chatCompletionStream,
+  isGatewayConfigured,
+  type GatewayMessage,
+} from "./gateway"
+import { translateLegacyModelId, DEFAULT_CHAT_MODEL } from "./models"
 import { createLogger } from "@/lib/logging/logger"
 
-const log = createLogger("Gemini")
+const log = createLogger("Chat")
 
-const apiKey = process.env.GOOGLE_API_KEY
-
-if (!apiKey) {
-  console.warn("GOOGLE_API_KEY not set - Gemini features will not work")
-}
-
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null
-
-export type GeminiModel =
-  | "gemini-3-flash-preview"   // Default - Fast, balanced, scale (The "Heartbeat")
-  | "gemini-3-pro-preview"     // Complex reasoning, vibe-coding (The "Brain")
-  | "gemini-2.5-flash"         // Low-latency, high-volume agent actions
-  | "gemini-2.5-pro"           // Deep research, large context, code execution
-  | "gemini-2.5-flash-lite"    // Ultra-fast, cost-efficient
-  | string                     // Allow any model string for flexibility
+export type GeminiModel = string
 
 export interface ChatMessage {
   role: "user" | "model"
@@ -29,7 +21,9 @@ export interface GeminiConfig {
   temperature?: number
   maxOutputTokens?: number
   systemInstruction?: string
-  tools?: Tool[]
+  /** Legacy Gemini-native tools (e.g. googleSearch grounding) — not supported
+   * through the gateway; use lib/agent/tools/web-search.ts (MCP) instead. */
+  tools?: unknown
   responseMimeType?: string
 }
 
@@ -47,41 +41,33 @@ Behavior:
 - Approach problems with curiosity and creativity
 - You can help generate ideas, write code, create content, and explore complex topics`
 
-export async function chat(
-  messages: ChatMessage[],
-  config: GeminiConfig = {}
-): Promise<string> {
-  if (!ai) throw new Error("Gemini not initialized - check GOOGLE_API_KEY")
-
-  const modelName = config.model ?? "gemini-3-flash-preview"
-  log.info("Starting chat", { messageCount: messages.length, model: modelName })
-
-  // Convert messages to Content format
-  const history: Content[] = messages.slice(0, -1).map(msg => ({
-    role: msg.role,
-    parts: [{ text: msg.content }],
-  }))
-
-  const lastMessage = messages[messages.length - 1]
-  log.debug("Sending message", { contentLength: lastMessage.content.length })
-
-  const genConfig: GenerateContentConfig = {
-    temperature: config.temperature ?? 0.8,
-    maxOutputTokens: config.maxOutputTokens ?? 4096,
-    systemInstruction: config.systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION,
-    tools: config.tools,
-    responseMimeType: config.responseMimeType,
+function toGatewayMessages(messages: ChatMessage[], config: GeminiConfig): GatewayMessage[] {
+  if (config.tools) {
+    log.warn("Gemini-native tools are not supported through the gateway; ignoring", {
+      tools: JSON.stringify(config.tools).slice(0, 100),
+    })
   }
 
-  // Use chat with history
-  const chat = ai.chats.create({
-    model: modelName,
-    config: genConfig,
-    history,
-  })
+  const out: GatewayMessage[] = []
+  const system = config.systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION
+  if (system) out.push({ role: "system", content: system })
+  for (const msg of messages) {
+    out.push({ role: msg.role === "model" ? "assistant" : "user", content: msg.content })
+  }
+  return out
+}
 
-  const response = await chat.sendMessage({ message: lastMessage.content })
-  const text = response.text ?? ""
+export async function chat(messages: ChatMessage[], config: GeminiConfig = {}): Promise<string> {
+  const model = translateLegacyModelId(config.model ?? DEFAULT_CHAT_MODEL)
+  log.info("Starting chat", { messageCount: messages.length, model })
+
+  const text = await chatCompletion({
+    model,
+    messages: toGatewayMessages(messages, config),
+    temperature: config.temperature ?? 0.8,
+    maxTokens: config.maxOutputTokens ?? 4096,
+    jsonMode: config.responseMimeType === "application/json",
+  })
 
   log.action("Chat completed", { responseLength: text.length })
   return text
@@ -91,120 +77,40 @@ export async function* chatStream(
   messages: ChatMessage[],
   config: GeminiConfig = {}
 ): AsyncGenerator<string, void, unknown> {
-  if (!ai) throw new Error("Gemini not initialized - check GOOGLE_API_KEY")
-
-  const modelName = config.model ?? "gemini-3-flash-preview"
-  log.info("Starting chat stream", { messageCount: messages.length, model: modelName })
-
-  // Convert messages to Content format
-  const history: Content[] = messages.slice(0, -1).map(msg => ({
-    role: msg.role,
-    parts: [{ text: msg.content }],
-  }))
-
-  const lastMessage = messages[messages.length - 1]
-
-  const genConfig: GenerateContentConfig = {
-    temperature: config.temperature ?? 0.8,
-    maxOutputTokens: config.maxOutputTokens ?? 4096,
-    systemInstruction: config.systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION,
-    tools: config.tools,
-    responseMimeType: config.responseMimeType,
-  }
-
-  const chat = ai.chats.create({
-    model: modelName,
-    config: genConfig,
-    history,
-  })
-
-  const streamResult = await chat.sendMessageStream({ message: lastMessage.content })
+  const model = translateLegacyModelId(config.model ?? DEFAULT_CHAT_MODEL)
+  log.info("Starting chat stream", { messageCount: messages.length, model })
 
   let totalLength = 0
-  for await (const chunk of streamResult) {
-    const text = chunk.text ?? ""
-    if (text) {
-      totalLength += text.length
-      yield text
-    }
+  for await (const delta of chatCompletionStream({
+    model,
+    messages: toGatewayMessages(messages, config),
+    temperature: config.temperature ?? 0.8,
+    maxTokens: config.maxOutputTokens ?? 4096,
+  })) {
+    totalLength += delta.length
+    yield delta
   }
 
   log.action("Chat stream completed", { totalResponseLength: totalLength })
 }
 
-export async function generateText(
-  prompt: string,
-  config: GeminiConfig = {}
-): Promise<string> {
-  if (!ai) throw new Error("Gemini not initialized - check GOOGLE_API_KEY")
-
-  const modelName = config.model ?? "gemini-3-flash-preview"
-  log.info("Generating text", { promptLength: prompt.length, model: modelName })
-
-  const genConfig: GenerateContentConfig = {
-    temperature: config.temperature ?? 0.8,
-    maxOutputTokens: config.maxOutputTokens ?? 4096,
-    systemInstruction: config.systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION,
-    tools: config.tools,
-    responseMimeType: config.responseMimeType,
-  }
-
-  const response = await ai.models.generateContent({
-    model: modelName,
-    contents: prompt,
-    config: genConfig,
-  })
-
-  const text = response.text ?? ""
-  log.action("Text generation completed", { responseLength: text.length })
-  return text
+export async function generateText(prompt: string, config: GeminiConfig = {}): Promise<string> {
+  return chat([{ role: "user", content: prompt }], config)
 }
 
 export interface StreamTextConfig extends GeminiConfig {
   onChunk?: (chunk: string) => void
 }
 
-export async function streamText(
-  prompt: string,
-  config: StreamTextConfig = {}
-): Promise<string> {
-  if (!ai) throw new Error("Gemini not initialized - check GOOGLE_API_KEY")
-
-  const modelName = config.model ?? "gemini-3-flash-preview"
-  log.info("Streaming text", { promptLength: prompt.length, model: modelName })
-
-  const genConfig: GenerateContentConfig = {
-    temperature: config.temperature ?? 0.8,
-    maxOutputTokens: config.maxOutputTokens ?? 4096,
-    systemInstruction: config.systemInstruction ?? DEFAULT_SYSTEM_INSTRUCTION,
-    tools: config.tools,
-    responseMimeType: config.responseMimeType,
-  }
-
-  const streamResult = await ai.models.generateContentStream({
-    model: modelName,
-    contents: prompt,
-    config: genConfig,
-  })
-
+export async function streamText(prompt: string, config: StreamTextConfig = {}): Promise<string> {
   let fullText = ""
-  for await (const chunk of streamResult) {
-    const text = chunk.text ?? ""
-    if (text) {
-      fullText += text
-      if (config.onChunk) {
-        config.onChunk(text)
-      }
-    }
+  for await (const delta of chatStream([{ role: "user", content: prompt }], config)) {
+    fullText += delta
+    config.onChunk?.(delta)
   }
-
-  log.action("Text streaming completed", { totalResponseLength: fullText.length })
   return fullText
 }
 
 export function isConfigured(): boolean {
-  return !!apiKey
+  return isGatewayConfigured()
 }
-
-export { ai as genAI }
-

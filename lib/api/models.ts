@@ -1,7 +1,8 @@
 /**
- * Gemini Model Configuration
- * Centralized model definitions for Komorebi
- * All models are configurable through the UI
+ * Model Configuration — Agency gateway (free models)
+ * Centralized model definitions for Komorebi.
+ * All models run through the OpenAI-compatible gateway; legacy Gemini ids
+ * from before the migration are translated on read.
  */
 
 export interface ModelConfig {
@@ -10,205 +11,161 @@ export interface ModelConfig {
   description: string
   category: "reasoning" | "fast" | "image" | "video" | "audio" | "code"
   capabilities: string[]
-  contextWindow: number
-  outputTokens: number
-  knowledgeCutoff: string
   recommended?: boolean
-  deprecated?: boolean
 }
 
-/**
- * Available Gemini models as of February 2026
- */
-export const GEMINI_MODELS: ModelConfig[] = [
-  // Gemini 3 Series (Latest)
-  {
-    id: "gemini-3-pro-preview",
-    name: "Gemini 3 Pro",
-    description: "Most intelligent model for multimodal understanding and agentic/vibe-coding",
-    category: "reasoning",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding", "thinking"],
-    contextWindow: 1048576,
-    outputTokens: 65536,
-    knowledgeCutoff: "January 2025",
-    recommended: true,
-  },
-  {
-    id: "gemini-3-pro-image-preview",
-    name: "Gemini 3 Pro Image",
-    description: "Image generation with thinking and search grounding",
-    category: "image",
-    capabilities: ["image-generation", "image-input", "text", "thinking", "search-grounding"],
-    contextWindow: 65536,
-    outputTokens: 32768,
-    knowledgeCutoff: "January 2025",
-  },
-  {
-    id: "gemini-3-flash-preview",
-    name: "Gemini 3 Flash",
-    description: "Most balanced model for speed, scale, and frontier intelligence",
-    category: "fast",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding", "thinking"],
-    contextWindow: 1048576,
-    outputTokens: 65536,
-    knowledgeCutoff: "January 2025",
-    recommended: true,
-  },
+export const DEFAULT_CHAT_MODEL = "cf-jami-zai-org-glm-5-3-flash"
+export const DEFAULT_CODE_MODEL = "cf-jami-qwen-qwen2-5-coder-32b-instruct"
+export const DEFAULT_IMAGE_MODEL = "cf-img-flux-1-schnell"
 
-  // Gemini 2.5 Series (Stable)
+/** Gateway free models (verified live). */
+export const GATEWAY_MODELS: ModelConfig[] = [
+  // Text
   {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    description: "Advanced thinking model for complex reasoning, code, math, STEM",
+    id: "cf-jami-zai-org-glm-5-3-flash",
+    name: "GLM 5.3 Flash",
+    description: "Fast frontier model — default for chat, agents, and analysis",
+    category: "fast",
+    capabilities: ["text", "vision", "function-calling", "thinking"],
+    recommended: true,
+  },
+  {
+    id: "cf-jami-zai-org-glm-5-3",
+    name: "GLM 5.3",
+    description: "Deep reasoning and large-context work",
     category: "reasoning",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding", "thinking"],
-    contextWindow: 1048576,
-    outputTokens: 65536,
-    knowledgeCutoff: "January 2025",
+    capabilities: ["text", "vision", "function-calling", "thinking"],
     recommended: true,
   },
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    description: "Best price-performance for large scale, low-latency, agentic tasks",
+    id: "cf-jami-moonshotai-kimi-k2-6",
+    name: "Kimi K2.6",
+    description: "Strong general assistant for agentic tasks",
+    category: "reasoning",
+    capabilities: ["text", "function-calling"],
+  },
+  {
+    id: "cf-jami-qwen-qwen3-30b-a3b-fp8",
+    name: "Qwen 3 30B A3B",
+    description: "Efficient high-throughput model",
     category: "fast",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding", "thinking"],
-    contextWindow: 1048576,
-    outputTokens: 65536,
-    knowledgeCutoff: "January 2025",
+    capabilities: ["text", "function-calling"],
+  },
+  {
+    id: "cf-jami-qwen-qwen2-5-coder-32b-instruct",
+    name: "Qwen 2.5 Coder 32B",
+    description: "Code generation and repair",
+    category: "code",
+    capabilities: ["text", "code", "code-execution"],
     recommended: true,
   },
   {
-    id: "gemini-2.5-flash-image",
-    name: "Gemini 2.5 Flash Image",
-    description: "Fast image generation and editing",
+    id: "ne-gpt-oss-120b",
+    name: "GPT-OSS 120B",
+    description: "OpenAI open-weight model for reasoning and tools",
+    category: "reasoning",
+    capabilities: ["text", "function-calling"],
+  },
+  {
+    id: "or-free",
+    name: "OpenRouter Free",
+    description: "Catch-all free lane with automatic fallbacks",
+    category: "fast",
+    capabilities: ["text"],
+  },
+  // Image generation (gateway /images/generations)
+  {
+    id: "cf-img-flux-1-schnell",
+    name: "FLUX 1 Schnell",
+    description: "Fast image generation — default",
     category: "image",
-    capabilities: ["image-generation", "image-input", "text"],
-    contextWindow: 65536,
-    outputTokens: 32768,
-    knowledgeCutoff: "June 2025",
+    capabilities: ["image-generation"],
     recommended: true,
   },
   {
-    id: "gemini-2.5-flash-lite",
-    name: "Gemini 2.5 Flash Lite",
-    description: "Ultra fast, cost-efficient model for high throughput",
-    category: "fast",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding", "thinking"],
-    contextWindow: 1048576,
-    outputTokens: 65536,
-    knowledgeCutoff: "January 2025",
+    id: "cf-img-flux-2-dev",
+    name: "FLUX 2 Dev",
+    description: "Higher-fidelity image generation",
+    category: "image",
+    capabilities: ["image-generation"],
   },
   {
-    id: "gemini-2.5-flash-native-audio-preview-12-2025",
-    name: "Gemini 2.5 Flash Live",
-    description: "Native audio generation and Live API support",
-    category: "audio",
-    capabilities: ["audio-generation", "audio-input", "video-input", "text", "function-calling", "search-grounding", "thinking", "live-api"],
-    contextWindow: 131072,
-    outputTokens: 8192,
-    knowledgeCutoff: "January 2025",
+    id: "cf-img-sdxl-lightning",
+    name: "SDXL Lightning",
+    description: "Very fast stylized image generation",
+    category: "image",
+    capabilities: ["image-generation"],
   },
   {
-    id: "gemini-2.5-flash-preview-tts",
-    name: "Gemini 2.5 Flash TTS",
-    description: "Text-to-speech audio generation",
-    category: "audio",
-    capabilities: ["audio-generation", "text-input"],
-    contextWindow: 8192,
-    outputTokens: 16384,
-    knowledgeCutoff: "December 2025",
-  },
-
-  // Gemini 2.0 Series (Deprecated - March 2026)
-  {
-    id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash",
-    description: "Second generation workhorse model",
-    category: "fast",
-    capabilities: ["text", "image", "video", "audio", "code-execution", "function-calling", "search-grounding"],
-    contextWindow: 1048576,
-    outputTokens: 8192,
-    knowledgeCutoff: "August 2024",
-    deprecated: true,
+    id: "cf-img-dreamshaper-8-lcm",
+    name: "Dreamshaper 8 LCM",
+    description: "Artistic/dreamlike image generation",
+    category: "image",
+    capabilities: ["image-generation"],
   },
 ]
 
 /**
- * Model presets for different use cases
+ * Model ids referenced before the gateway migration (Gemini-era) mapped onto
+ * the closest surviving gateway model. Unknown ids pass through unchanged.
  */
+const LEGACY_MODEL_MAP: Record<string, string> = {
+  "gemini-3-flash-preview": DEFAULT_CHAT_MODEL,
+  "gemini-2.5-flash": "cf-jami-qwen-qwen3-30b-a3b-fp8",
+  "gemini-2.5-flash-lite": "or-free",
+  "gemini-2.5-pro": "cf-jami-zai-org-glm-5-3",
+  "gemini-3-pro-preview": "cf-jami-zai-org-glm-5-3",
+  "gemini-2.5-flash-image": DEFAULT_IMAGE_MODEL,
+  "gemini-3-pro-image-preview": "cf-img-flux-2-dev",
+  "imagen-4.0-generate-001": DEFAULT_IMAGE_MODEL,
+  "imagen-4.0-ultra-generate-001": "cf-img-flux-2-dev",
+  "imagen-4.0-fast-generate-001": "cf-img-sdxl-lightning",
+}
+
+export function translateLegacyModelId(modelId: string): string {
+  return LEGACY_MODEL_MAP[modelId] ?? modelId
+}
+
+/** Back-compat alias for code that referenced the Gemini catalog by name. */
+export const GEMINI_MODELS: ModelConfig[] = GATEWAY_MODELS
+
+export function getModelsByCategory(category: ModelConfig["category"]): ModelConfig[] {
+  return GATEWAY_MODELS.filter((m) => m.category === category)
+}
+
+export function getModelsByCapability(capability: string): ModelConfig[] {
+  return GATEWAY_MODELS.filter((m) => m.capabilities.includes(capability))
+}
+
+/** Model presets for different use cases. */
 export const MODEL_PRESETS = {
-  // Sandbox/Code execution
   codeExecution: {
-    default: "gemini-2.5-pro",
-    fast: "gemini-2.5-flash",
-    advanced: "gemini-3-pro-preview",
+    default: DEFAULT_CODE_MODEL,
+    fast: "or-free",
+    advanced: "cf-jami-zai-org-glm-5-3",
   },
-
-  // Research with grounding
   research: {
-    default: "gemini-2.5-pro",
-    fast: "gemini-2.5-flash",
-    advanced: "gemini-3-pro-preview",
+    default: "cf-jami-zai-org-glm-5-3",
+    fast: DEFAULT_CHAT_MODEL,
+    advanced: "ne-gpt-oss-120b",
   },
-
-  // Creative tasks
   creative: {
-    text: "gemini-3-pro-preview",
-    image: "gemini-2.5-flash-image",
-    imageAdvanced: "gemini-3-pro-image-preview",
+    text: "cf-jami-zai-org-glm-5-3",
+    image: DEFAULT_IMAGE_MODEL,
+    imageAdvanced: "cf-img-flux-2-dev",
   },
-
-  // Agent orchestration
   orchestrator: {
-    default: "gemini-2.5-pro",
-    advanced: "gemini-3-pro-preview",
+    default: "cf-jami-zai-org-glm-5-3",
+    advanced: "ne-gpt-oss-120b",
   },
-
-  // Sub-agents
   subAgents: {
-    researcher: "gemini-2.5-pro",
-    creator: "gemini-3-pro-preview",
-    coder: "gemini-3-pro-preview",
-    reviewer: "gemini-3-flash-preview",
+    researcher: "cf-jami-zai-org-glm-5-3",
+    creator: "cf-jami-zai-org-glm-5-3",
+    coder: DEFAULT_CODE_MODEL,
+    reviewer: DEFAULT_CHAT_MODEL,
   },
 } as const
 
-/**
- * Get models by category
- */
-export function getModelsByCategory(category: ModelConfig["category"]): ModelConfig[] {
-  return GEMINI_MODELS.filter((m) => m.category === category && !m.deprecated)
-}
-
-/**
- * Get models by capability
- */
-export function getModelsByCapability(capability: string): ModelConfig[] {
-  return GEMINI_MODELS.filter(
-    (m) => m.capabilities.includes(capability) && !m.deprecated
-  )
-}
-
-/**
- * Get recommended models
- */
-export function getRecommendedModels(): ModelConfig[] {
-  return GEMINI_MODELS.filter((m) => m.recommended && !m.deprecated)
-}
-
-/**
- * Get model by ID
- */
 export function getModel(id: string): ModelConfig | undefined {
-  return GEMINI_MODELS.find((m) => m.id === id)
+  return GATEWAY_MODELS.find((m) => m.id === id)
 }
-
-/**
- * Check if model supports code execution
- */
-export function supportsCodeExecution(modelId: string): boolean {
-  const model = getModel(modelId)
-  return model?.capabilities.includes("code-execution") ?? false
-}
-

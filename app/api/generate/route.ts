@@ -1,41 +1,34 @@
 import { generateText } from "ai"
 import { google } from "@/lib/api/google-ai-sdk"
+import { generateImage } from "@/lib/api/imagen"
+import { DEFAULT_CHAT_MODEL, DEFAULT_CODE_MODEL } from "@/lib/api/models"
 
 export const maxDuration = 120
 
 export async function POST(req: Request) {
   const { prompt, type } = await req.json()
 
-  // For image generation, use the Gemini model that supports image output
+  // Image generation runs through the gateway's /images/generations endpoint
+  // (free FLUX/SDXL models) via lib/api/imagen.
   if (type === "image") {
-    const result = await generateText({
-      model: google("gemini-2.5-flash-image"),
-      prompt: `Create a detailed, artistic image based on this description: ${prompt}`,
-      maxOutputTokens: 8192,
-    })
-
-    const images = []
-    if (result.files) {
-      for (const file of result.files) {
-        if (file.mediaType.startsWith("image/")) {
-          images.push({
-            base64: file.base64,
-            mediaType: file.mediaType,
-          })
-        }
-      }
-    }
+    const imagePrompt = `Create a detailed, artistic image based on this description: ${prompt}`
+    const image = await generateImage(imagePrompt)
+    const mediaType = image.url.match(/^data:([^;]+);/)?.[1] ?? "image/jpeg"
 
     return Response.json({
-      text: result.text,
-      images,
-      usage: result.usage,
+      text: `Generated image for: ${prompt}`,
+      images: [
+        {
+          base64: image.url.replace(/^data:[^;]+;base64,/, ""),
+          mediaType,
+        },
+      ],
     })
   }
 
   // For text generation
   const result = await generateText({
-    model: google("gemini-2.5-flash"),
+    model: google(type === "code" ? DEFAULT_CODE_MODEL : DEFAULT_CHAT_MODEL),
     prompt,
     maxOutputTokens: 4096,
   })

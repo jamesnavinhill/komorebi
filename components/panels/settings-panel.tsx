@@ -170,7 +170,6 @@ export function SettingsPanel() {
   const { scheduledTasks, toggleScheduledTask, removeScheduledTask, fetchTasks, memories, clearMessages, clearThoughts, outputs } = useAgentStore()
   const {
     settings,
-    setApiKey,
     setModel,
     setImageModel,
     setImageAspectRatio,
@@ -181,12 +180,10 @@ export function SettingsPanel() {
     setVideoIncludeAudio,
     setTemperature,
     setSchedulesEnabled,
-    hasApiKey,
   } = useSettings()
   const { exportToJSON: exportMemories } = useMemory()
 
   const [expandedSection, setExpandedSection] = useState<string | null>("api")
-  const [showApiKey, setShowApiKey] = useState(false)
   const [syncingTasks, setSyncingTasks] = useState(false)
   const [syncStatus, setSyncStatus] = useState<string | null>(null)
 
@@ -420,26 +417,12 @@ export function SettingsPanel() {
               icon={MessageSquare}
               description="Credentials and core model behavior."
             >
-              <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">Gemini API Key</label>
-                <div className="flex gap-2">
-                  <Input
-                    type={showApiKey ? "text" : "password"}
-                    value={settings.apiKey}
-                    onChange={(event) => setApiKey(event.target.value)}
-                    placeholder="Enter your API key"
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                  >
-                    {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </div>
+              <div className="space-y-2 rounded-lg border border-border bg-background/40 px-3 py-2">
+                <p className="text-sm text-muted-foreground">Provider</p>
                 <p className="text-xs text-muted-foreground">
-                  {hasApiKey ? "API key configured." : "Get your API key from ai.google.dev."}
+                  Yrka gateway (free models) — configured server-side via
+                  {" "}<code className="text-[11px]">YRKA_GATEWAY_API_KEY</code>. Video (Veo) uses
+                  your own Google API key via <code className="text-[11px]">GOOGLE_API_KEY</code>.
                 </p>
               </div>
 
@@ -450,11 +433,12 @@ export function SettingsPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gemini-3-flash-preview">Gemini 3 Flash (Fast)</SelectItem>
-                    <SelectItem value="gemini-3-pro-preview">Gemini 3 Pro (Brain)</SelectItem>
-                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Agentic)</SelectItem>
-                    <SelectItem value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (Ultra Fast)</SelectItem>
-                    <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro (Research)</SelectItem>
+                    <SelectItem value="cf-jami-zai-org-glm-5-3-flash">GLM 5.3 Flash (Fast)</SelectItem>
+                    <SelectItem value="cf-jami-zai-org-glm-5-3">GLM 5.3 (Brain)</SelectItem>
+                    <SelectItem value="cf-jami-moonshotai-kimi-k2-6">Kimi K2.6 (Agentic)</SelectItem>
+                    <SelectItem value="cf-jami-qwen-qwen3-30b-a3b-fp8">Qwen 3 30B (Efficient)</SelectItem>
+                    <SelectItem value="ne-gpt-oss-120b">GPT-OSS 120B (Research)</SelectItem>
+                    <SelectItem value="or-free">OpenRouter Free (Catch-all)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -494,11 +478,10 @@ export function SettingsPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gemini-2.5-flash-image">Gemini 2.5 Flash Image (Default)</SelectItem>
-                    <SelectItem value="gemini-3-pro-image-preview">Gemini 3 Pro Image (Preview)</SelectItem>
-                    <SelectItem value="imagen-4.0-generate-001">Imagen 4 Generate</SelectItem>
-                    <SelectItem value="imagen-4.0-ultra-generate-001">Imagen 4 Ultra</SelectItem>
-                    <SelectItem value="imagen-4.0-fast-generate-001">Imagen 4 Fast</SelectItem>
+                    <SelectItem value="cf-img-flux-1-schnell">FLUX 1 Schnell (Fast)</SelectItem>
+                    <SelectItem value="cf-img-flux-2-dev">FLUX 2 Dev (High Fidelity)</SelectItem>
+                    <SelectItem value="cf-img-sdxl-lightning">SDXL Lightning (Fast)</SelectItem>
+                    <SelectItem value="cf-img-dreamshaper-8-lcm">Dreamshaper 8 (Artistic)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -523,7 +506,7 @@ export function SettingsPanel() {
             <SettingGroup
               title="Video"
               icon={Video}
-              description="Veo model, format, and duration."
+              description="Veo model, format, and duration. Requires GOOGLE_API_KEY (BYOK)."
             >
               <div className="space-y-2">
                 <label className="text-sm text-muted-foreground">Video Model</label>

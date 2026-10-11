@@ -1,4 +1,5 @@
 import { generateText } from "@/lib/api/gemini"
+import { webSearch } from "@/lib/api/gateway"
 import { addKnowledge } from "@/lib/db/knowledge"
 import { saveGalleryItem } from "@/lib/db/gallery"
 import { pushActivity } from "@/lib/activity/bus"
@@ -60,9 +61,30 @@ export async function performMorningRead() {
   `
 
   try {
-    const response = await generateText(prompt, {
+    // Web search runs through the agency MCP toolbox (you_search -> tavily fallback);
+    // results are fed to the model as grounding context.
+    const searchResults = await webSearch(
+      "AI breakthroughs arxiv HuggingFace GitHub trending tech science news today",
+      10
+    ).catch((err) => {
+      pushActivity({
+        action: "Morning Read web search failed",
+        details: err instanceof Error ? err.message : "Unknown error",
+        source: "Research",
+        level: "error",
+        timestamp: Date.now()
+      })
+      return []
+    })
+
+    const searchContext = searchResults.length
+      ? `\n\n# Live web search results (grounding)\n${searchResults
+          .map((r, i) => `${i + 1}. [${r.title}](${r.url})\n   ${r.content}`)
+          .join("\n")}`
+      : ""
+
+    const response = await generateText(prompt + searchContext, {
       model: "gemini-3-pro-preview",
-      tools: [{ googleSearch: {} }],
       responseMimeType: "application/json"
     })
 
