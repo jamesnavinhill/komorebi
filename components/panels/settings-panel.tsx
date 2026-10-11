@@ -433,12 +433,12 @@ export function SettingsPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cf-jami-zai-org-glm-5-3-flash">GLM 5.3 Flash (Fast)</SelectItem>
-                    <SelectItem value="cf-jami-zai-org-glm-5-3">GLM 5.3 (Brain)</SelectItem>
-                    <SelectItem value="cf-jami-moonshotai-kimi-k2-6">Kimi K2.6 (Agentic)</SelectItem>
-                    <SelectItem value="cf-jami-qwen-qwen3-30b-a3b-fp8">Qwen 3 30B (Efficient)</SelectItem>
-                    <SelectItem value="ne-gpt-oss-120b">GPT-OSS 120B (Research)</SelectItem>
+                    <SelectItem value="nv-z-ai-glm-5-3-flash">GLM 5.3 Flash (Fast)</SelectItem>
+                    <SelectItem value="nv-z-ai-glm-5-3">GLM 5.3 (Brain)</SelectItem>
+                    <SelectItem value="nv-moonshotai-kimi-k3">Kimi K3 (Agentic)</SelectItem>
+                    <SelectItem value="in-mercury-2">Mercury 2 (Ultra Fast)</SelectItem>
                     <SelectItem value="or-free">OpenRouter Free (Catch-all)</SelectItem>
+                    <SelectItem value="cf-jami-qwen-qwen2-5-coder-32b-instruct">Qwen 2.5 Coder (Code)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

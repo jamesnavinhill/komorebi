@@ -14,57 +14,50 @@ export interface ModelConfig {
   recommended?: boolean
 }
 
-export const DEFAULT_CHAT_MODEL = "cf-jami-zai-org-glm-5-3-flash"
+export const DEFAULT_CHAT_MODEL = "nv-z-ai-glm-5-3-flash"
 export const DEFAULT_CODE_MODEL = "cf-jami-qwen-qwen2-5-coder-32b-instruct"
 export const DEFAULT_IMAGE_MODEL = "cf-img-flux-1-schnell"
 
 /** Gateway free models (verified live). */
 export const GATEWAY_MODELS: ModelConfig[] = [
-  // Text
+  // Text — truly-free lanes first (NVIDIA NIM, OpenRouter free, Inception);
+  // Cloudflare Workers AI models are dev/fallback options (limited free quota).
   {
-    id: "cf-jami-zai-org-glm-5-3-flash",
-    name: "GLM 5.3 Flash",
+    id: "nv-z-ai-glm-5-3-flash",
+    name: "GLM 5.3 Flash (NVIDIA)",
     description: "Fast frontier model — default for chat, agents, and analysis",
     category: "fast",
     capabilities: ["text", "vision", "function-calling", "thinking"],
     recommended: true,
   },
   {
-    id: "cf-jami-zai-org-glm-5-3",
-    name: "GLM 5.3",
+    id: "nv-z-ai-glm-5-3",
+    name: "GLM 5.3 (NVIDIA)",
     description: "Deep reasoning and large-context work",
     category: "reasoning",
     capabilities: ["text", "vision", "function-calling", "thinking"],
     recommended: true,
   },
   {
-    id: "cf-jami-moonshotai-kimi-k2-6",
-    name: "Kimi K2.6",
+    id: "nv-moonshotai-kimi-k3",
+    name: "Kimi K3 (NVIDIA)",
     description: "Strong general assistant for agentic tasks",
     category: "reasoning",
-    capabilities: ["text", "function-calling"],
+    capabilities: ["text", "vision", "function-calling"],
   },
   {
-    id: "cf-jami-qwen-qwen3-30b-a3b-fp8",
-    name: "Qwen 3 30B A3B",
-    description: "Efficient high-throughput model",
+    id: "nv-nvidia-nemotron-3-nano-omni-30b-a3b-reasoning",
+    name: "Nemotron 3 Nano Omni",
+    description: "Omni-modal reasoning (text + vision + audio input)",
     category: "fast",
-    capabilities: ["text", "function-calling"],
+    capabilities: ["text", "vision", "function-calling", "thinking"],
   },
   {
-    id: "cf-jami-qwen-qwen2-5-coder-32b-instruct",
-    name: "Qwen 2.5 Coder 32B",
-    description: "Code generation and repair",
-    category: "code",
-    capabilities: ["text", "code", "code-execution"],
-    recommended: true,
-  },
-  {
-    id: "ne-gpt-oss-120b",
-    name: "GPT-OSS 120B",
-    description: "OpenAI open-weight model for reasoning and tools",
-    category: "reasoning",
-    capabilities: ["text", "function-calling"],
+    id: "in-mercury-2",
+    name: "Mercury 2 (Inception)",
+    description: "Diffusion LLM — very fast text generation",
+    category: "fast",
+    capabilities: ["text"],
   },
   {
     id: "or-free",
@@ -72,6 +65,14 @@ export const GATEWAY_MODELS: ModelConfig[] = [
     description: "Catch-all free lane with automatic fallbacks",
     category: "fast",
     capabilities: ["text"],
+  },
+  {
+    id: "cf-jami-qwen-qwen2-5-coder-32b-instruct",
+    name: "Qwen 2.5 Coder 32B (CF)",
+    description: "Code generation and repair",
+    category: "code",
+    capabilities: ["text", "code", "code-execution"],
+    recommended: true,
   },
   // Image generation (gateway /images/generations)
   {
@@ -142,25 +143,25 @@ export const MODEL_PRESETS = {
   codeExecution: {
     default: DEFAULT_CODE_MODEL,
     fast: "or-free",
-    advanced: "cf-jami-zai-org-glm-5-3",
+    advanced: "nv-z-ai-glm-5-3",
   },
   research: {
-    default: "cf-jami-zai-org-glm-5-3",
+    default: "nv-z-ai-glm-5-3",
     fast: DEFAULT_CHAT_MODEL,
-    advanced: "ne-gpt-oss-120b",
+    advanced: "nv-nvidia-nemotron-3-ultra-550b-a55b",
   },
   creative: {
-    text: "cf-jami-zai-org-glm-5-3",
+    text: "nv-z-ai-glm-5-3",
     image: DEFAULT_IMAGE_MODEL,
     imageAdvanced: "cf-img-flux-2-dev",
   },
   orchestrator: {
-    default: "cf-jami-zai-org-glm-5-3",
-    advanced: "ne-gpt-oss-120b",
+    default: "nv-z-ai-glm-5-3",
+    advanced: "nv-nvidia-nemotron-3-ultra-550b-a55b",
   },
   subAgents: {
-    researcher: "cf-jami-zai-org-glm-5-3",
-    creator: "cf-jami-zai-org-glm-5-3",
+    researcher: "nv-z-ai-glm-5-3",
+    creator: "nv-z-ai-glm-5-3",
     coder: DEFAULT_CODE_MODEL,
     reviewer: DEFAULT_CHAT_MODEL,
   },
