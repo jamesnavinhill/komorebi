@@ -1,14 +1,16 @@
 # Komorebi
 
-Komorebi is a local-first autonomous agent interface built with Next.js. It combines a reactive UI, scheduled task execution, and media generation through Google Gemini, Imagen, and Veo APIs. It persists state in Neon Postgres and stores media on the local filesystem.
+Komorebi is an autonomous agent interface built with Next.js. It combines a reactive UI, scheduled task execution, and media generation. All AI runs through the Yrka Agency gateway (OpenAI-compatible, free models); video generation (Veo) is BYOK via a Google API key. State persists in Neon Postgres and media on the local filesystem.
+
+Deployed at https://komorebi.navinhill.com
 
 ## Core Capabilities (From Current Code)
 
-- Agent chat with AI SDK orchestration and streaming.
-- Direct Google provider auth for AI SDK routes (no AI Gateway key required).
-- Morning Read research task with Google Search grounding.
-- Image generation and editing with Gemini/Imagen models.
-- Video generation with Veo (text-to-video and image-to-video).
+- Agent chat with AI SDK orchestration and streaming (ToolLoopAgent over the gateway).
+- Text/chat/code-gen through gateway free models (GLM 5.3 Flash default).
+- Morning Read research task with MCP web search (you_search primary, tavily fallback).
+- Image generation via the gateway's /images/generations (FLUX/SDXL/Dreamshaper).
+- Video generation with Veo (BYOK: requires GOOGLE_API_KEY).
 - Memory and knowledge capture in Postgres.
 - Gallery persistence with local media storage under `public/`.
 - Scheduling via cron expressions and a local cron trigger.
@@ -31,13 +33,14 @@ cp .env.local.example .env.local
 
 Required variables:
 
-- `GOOGLE_API_KEY`
-- `DATABASE_URL`
-- `CRON_SECRET`
+- `YRKA_GATEWAY_API_KEY` — Agency gateway master key (all AI)
+- `DATABASE_URL` — Neon Postgres
+- `CRON_SECRET` — Bearer token for /api/cron
 
-Not required:
+Optional:
 
-- `AI_GATEWAY_API_KEY`
+- `YRKA_MCP_GATEWAY_TOKEN` — MCP toolbox token (falls back to the gateway key)
+- `GOOGLE_API_KEY` — BYOK, enables Veo video generation only
 
 Apply database schema (core + sandbox tables).
 
