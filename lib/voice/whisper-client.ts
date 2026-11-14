@@ -1,5 +1,5 @@
 /**
- * Browser-based Whisper Speech-to-Text using @xenova/transformers
+ * Browser-based Whisper Speech-to-Text using @huggingface/transformers
  * Runs entirely client-side with no API costs
  */
 
@@ -12,7 +12,7 @@ async function getPipeline() {
     }
 
     if (!pipelinePromise) {
-        pipelinePromise = import('@xenova/transformers').then(mod => {
+        pipelinePromise = import('@huggingface/transformers').then(mod => {
             if (mod.env) {
                 mod.env.allowLocalModels = false;
                 mod.env.useBrowserCache = false;

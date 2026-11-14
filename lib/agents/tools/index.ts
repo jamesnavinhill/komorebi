@@ -307,7 +307,7 @@ Available roles:
     taskDescription: z.string().describe("Clear description of the task to delegate"),
     agentRole: z.enum(["researcher", "creator", "executor", "reviewer", "coder"]).describe("The type of specialized agent to spawn"),
     priority: z.enum(["high", "normal", "low"]).default("normal"),
-    context: z.record(z.unknown()).optional().describe("Additional context to pass to the sub-agent"),
+    context: z.record(z.string(), z.unknown()).optional().describe("Additional context to pass to the sub-agent"),
   }),
   // Note: No execute function - this tool signals to the orchestrator to spawn a sub-agent
   // The orchestrator will handle the actual spawning
